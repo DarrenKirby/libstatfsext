@@ -5,7 +5,7 @@ inspired by the BSD libc:
 
 1. statfs_ext()
 
-This is the same as the standard linux statfs() call except the struct retured 
+This is the same as the standard linux statfs() call except the struct returned 
 has a few more useful fields added.
 
 2. getfsstat_linux()
@@ -13,6 +13,12 @@ has a few more useful fields added.
 This is an implementation of the BSD getfsstat() call, which returns an array 
 of statfs_ext structs, one for every mounted file system.
 
+Please note that binary-compatibility may break often while the library is young
+as I flesh out the functions and lock down the public interface. I will be using
+semantic numbering (ie: 1.a.b), so 'b' version bumps will be backwards compatible,
+while 'a' version bumps may not be.
+
 Author: Darren Kirby
-Bugs: bulliver@gmail.com
+Bugs: Please open an issue here [0] or send an email to bulliver@gmail.com
+[0] https://github.com/DarrenKirby/libstatfsext/issues
 
