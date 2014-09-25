@@ -1,0 +1,18 @@
+README
+
+This here is a small and simple shared c library that implements two functions 
+inspired by the BSD libc:
+
+1. statfs_ext()
+
+This is the same as the standard linux statfs() call except the struct retured 
+has a few more useful fields added.
+
+2. getfsstat_linux()
+
+This is an implementation of the BSD getfsstat() call, which returns an array 
+of statfs_ext structs, one for every mounted file system.
+
+Author: Darren Kirby
+Bugs: bulliver@gmail.com
+
