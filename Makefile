@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS ?= -Wall -Werror --std=gnu99
+CFLAGS = -Wall -ggdb3 -o0 --std=gnu99
 LDFLAGS = -shared
 DBUGFLAGS = -ggdb3 -o0
 SRCDIR = lib
@@ -14,10 +14,11 @@ all: $(TARGET)
 
 $(TARGET):
 	$(CC) -c $(CFLAGS) -o $(SRCDIR)/$(SRCOBJT) -fpic $(SRCDIR)/$(SRCFILE)
-	$(CC) $(LDFLAGS) -o $(SRCDIR)/$(TARGET) $(SRCDIR)/$(SRCOBJT) 
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $(SRCDIR)/$(TARGET) $(SRCDIR)/$(SRCOBJT) 
 
 test: $(TARGET)
-	$(CC) -L$(SRCDIR) $(CFLAGS) -o $(SRCDIR)/test $(SRCDIR)/main.c -lstatfsext
+	$(CC) -L$(SRCDIR) $(CFLAGS) -o $(SRCDIR)/test $(SRCDIR)/test.c -lstatfsext
+	$(CC) -L$(SRCDIR) $(CFLAGS) -o $(SRCDIR)/test2 $(SRCDIR)/test2.c -lstatfsext
 
 strip:
 	strip $(SRCDIR)/$(TARGET)
@@ -31,13 +32,14 @@ install:
 	install -o root -g root -m 0644 $(SRCDIR)/$(SRCHEAD) $(INCLDIR)/$(SRCHEAD)
 
 uninstall:
-	-rm -rf $(INSTDIR)$(TARGET)
+	-rm -rf $(INSTDIR)/$(TARGET)
 	-rm -rf $(INCLDIR)/$(SRCHEAD)
 
 clean:
 	-rm -rf $(SRCDIR)/libstatfsext.o
 	-rm -rf $(SRCDIR)/libstatfsext.so
 	-rm -rf $(SRCDIR)/test
+	-rm -rf $(SRCDIR)/test2
 
 .PHONY: all clean install strip
 
