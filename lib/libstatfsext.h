@@ -23,7 +23,7 @@
 #ifndef _LIBSTATFSEXT_H
 #define _LIBSTATFSEXT_H
 
-#define LIBVERSION 1.1.0
+#define LIBVERSION 1.1.1
 
 #include <stdio.h>
 #include <sys/statfs.h>      /* for statfs struct */
@@ -32,7 +32,6 @@
 #include <stdlib.h>          /* for EXIT_FAILURE */
 #include <string.h>          /* for strncpy */
 #include <unistd.h>          /* for access() */
-
 
 #define FS_TYPE_LEN      90
 #define MNT_FLAGS_LEN    256
@@ -70,6 +69,29 @@ struct statfs_ext {
     char f_mntonname[PATH_MAX];      /* directory on which mounted */
     char f_mntfromname[PATH_MAX];    /* mounted file sytem */
 };
+
+// #define FS_1 8408
+#define FS_1 sizeof(struct statfs_ext)
+#define FS_2 (FS_1 * 2)
+#define FS_3 (FS_1 * 3)
+#define FS_4 (FS_1 * 4)
+#define FS_5 (FS_1 * 5)
+#define FS_6 (FS_1 * 6)
+#define FS_7 (FS_1 * 7)
+#define FS_8 (FS_1 * 8)
+#define FS_9 (FS_1 * 9)
+#define FS_10 (FS_1 * 10)
+#define FS_11 (FS_1 * 11)
+#define FS_12 (FS_1 * 12)
+#define FS_13 (FS_1 * 13)
+#define FS_14 (FS_1 * 14)
+#define FS_15 (FS_1 * 15)
+#define FS_16 (FS_1 * 16)
+#define FS_17 (FS_1 * 17)
+#define FS_18 (FS_1 * 18)
+#define FS_19 (FS_1 * 19)
+#define FS_20 (FS_1 * 20)
+#define FS_ALL 0
 
 /* function prototypes */
 extern char *getmntpt(char *path);

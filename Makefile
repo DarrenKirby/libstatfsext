@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS = -Wall -ggdb3 -o0 --std=gnu99
+CFLAGS = -Wall --std=gnu99
 LDFLAGS = -shared
 DBUGFLAGS = -ggdb3 -o0
 SRCDIR = lib
@@ -47,5 +47,5 @@ clean:
 	-rm -rf $(SRCDIR)/test
 	-rm -rf $(SRCDIR)/test2
 
-.PHONY: all clean install strip
+.PHONY: all clean install strip uninstall
 

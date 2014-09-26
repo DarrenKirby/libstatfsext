@@ -8,7 +8,7 @@ int main(void) {
         exit(EXIT_FAILURE);
     }
     
-    n_mounts = getfsstat_ext(buf, 8408, 0);
+    n_mounts = getfsstat_ext(buf, FS_ALL, 0);
     if (n_mounts == -1) {
         printf("ERRNO: %i\n", errno);
         exit(EXIT_FAILURE);
