@@ -1,0 +1,149 @@
+.\" Copyright (C) 2014 Darren Kirby (bulliver@gmail.com)
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.TH GETFSSTAT_EXT 3 2014-09-26
+.SH NAME
+getfsstat_ext \- get a list of all mounted file systems
+.SH SYNOPSIS
+.BR "#include <libstatfsext.h>
+.sp
+.BI "int getfsstat_ext(struct statfs_ext *buf, long int bufsize, int flags);
+.br
+.SH DESCRIPTION
+The 
+.BR getfsstat() 
+function returns information about all mounted file
+systems.  The 
+.I buf 
+argument is a pointer to a statfs_ext structure, as
+described in 
+.BR statfs_ext(3).
+.PP
+Fields that are undefined for a particular file system are set to 0.
+The buffer is filled with an array of statfs_ext structures, one for each
+mounted file system up to the size count specified by 
+.I bufsize. 
+There are macros defined to pass to 
+.I bufsize:
+
+.in +4n
+.nf
+#define FS_1 sizeof(struct statfs_ext)
+#define FS_2 (FS_1 * 2)
+#define FS_3 (FS_1 * 3)
+#define FS_4 (FS_1 * 4)
+.fi
+.PP
+and so on up to:
+
+.in +4n
+.nf
+#define FS_18 (FS_1 * 18)
+#define FS_19 (FS_1 * 19)
+#define FS_20 (FS_1 * 20)
+.fi
+.PP
+For example, passing 
+.B FS_4
+will return structs for the first 4 file systems found in 
+.I /proc/mounts
+in the order they are listed. Passing 
+.B FS_ALL
+will return structs for all currently mounted file systems. You can pass any arbitrary integer to 
+.I bufsize
+but behaviour is unspecified and odd things may result. If you choose to do this it would be wise to pass an integer that is a multiple of 
+.B sizeof(struct statfs_ext). 
+
+.PP
+If 
+.I buf 
+is given as NULL, 
+.B getfsstat_ext() 
+returns just the number of mounted file systems.
+
+.PP
+.I flags
+is not implemented yet, just pass any integer for now. When I get to it this will be implemented as per the BSD version:
+.PP
+"Normally flags should be specified as MNT_WAIT.  If flags is set to
+MNT_NOWAIT, getfsstat() will return the information it has available
+without requesting an update from each file system.  Thus, some of the
+information will be out of date, but getfsstat() will not block waiting
+for information from a file system that is unable to respond."
+
+.SH USAGE
+.PP 
+.B getfsstat_ext()
+requires you to allocate memory for the initial struct yourself. Typically this would be done like so:
+
+.in +4n
+.nf
+#include <libstatfsext.h>
+
+int main(void) {
+    struct statfs_ext *buf = malloc(sizeof(struct statfs_ext));
+    getfsstat_ext(buf, FS_ALL, 0);
+
+    /* do stuff with struct */
+
+    free(buf);
+    return 0;
+}
+.fi
+.PP
+Memory for the struct(s) will be reallocated as needed depending on size.
+.SH RETURN VALUE
+On success, the number of file system structs written to is returned.
+On error, \-1 is returned, and
+.I errno
+is set appropriately.
+.SH ERRORS
+.TP
+.B EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+(See also
+.B path_resolution (7).)
+.TP
+.B ENAMETOOLONG
+The argument to
+.I path 
+is too long.
+.TP
+.B ENOENT
+The file referred to by
+.I path
+does not exist.
+.TP
+.B ENOMEM
+Insufficient kernel memory was available, call to 
+.B malloc() 
+or 
+.B realloc() 
+failed.
+.SH CONFORMING TO
+Linux-specific. Depends on reading 
+.B /proc/mounts.
+You wouldn't want to use this on BSD or OSX anyway, those versions were written by people much smarter than me. 
+.SH BUGS
+Probably lots. The author strongly prefers you report bugs by opening an issue at
+.B libstatfsext 
+github page: 
+.B https://github.com/DarrenKirby/libstatfsext/issues.
+If you prefer not, send an email to <bulliver@gmail.com>
+.SH SEE ALSO
+.B statfs_ext (3)
+for the definition of the 
+.B statfs_ext
+struct.
+.SH AUTHOR
+Darren Kirby <bulliver@gmail.com>

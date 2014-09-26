@@ -1,0 +1,132 @@
+.\" Copyright (C) 2014 Darren Kirby (bulliver@gmail.com)
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.TH STATFS_EXT 3 2014-09-26
+.SH NAME
+statfs_ext \- get extended filesystem statistics
+.SH SYNOPSIS
+.BR "#include <libstatfsext.h>
+.sp
+.BI "int statfs_ext(const char *" path ", struct statfs_ext *" buf );
+.br
+.SH DESCRIPTION
+The function
+.BR statfs_ext()
+returns information about a mounted filesystem. It contains fields exactly like the regular  
+.BR struct 
+.BR statfs 
+as well as three (for now) additional fields available in the BSD version of the call.
+.I path
+is the pathname of any file within the mounted filesystem.
+.I buf
+is a pointer to a
+.I statfs_ext
+structure defined as follows:
+
+.in +4n
+.nf
+#if __WORDSIZE == 32		/* System word size */
+# define __WORD_TYPE           int
+#else /* __WORDSIZE == 64 */
+# define __WORD_TYPE		long int
+#endif
+
+struct statfs_ext {
+    __WORD_TYPE  f_type;             /* type of filesystem (see below) */
+    __WORD_TYPE  f_bsize;            /* optimal transfer block size */
+    fsblkcnt_t   f_blocks;           /* total data blocks in filesystem */
+    fsblkcnt_t   f_bfree;            /* free blocks in fs */
+    fsblkcnt_t   f_bavail;           /* free blocks available to unprivileged user */
+    fsfilcnt_t   f_files;            /* total file nodes in filesystem */
+    fsfilcnt_t   f_ffree;            /* free file nodes in fs */
+    fsid_t       f_fsid;             /* filesystem id */
+    __WORD_TYPE  f_namelen;          /* maximum length of filenames */
+    __WORD_TYPE  f_frsize;           /* fragment size (since Linux 2.6) */
+    __WORD_TYPE  f_spare[5];
+    
+    /* these extra fields add path info as in the *BSD versions of statfs() */
+    char f_fstypename[FS_TYPE_LEN];  /* fs type name */
+    char f_mntonname[PATH_MAX];      /* directory on which mounted */
+    char f_mntfromname[PATH_MAX];    /* mounted file sytem */
+};
+.fi
+.PP
+Fields that are undefined for a particular filesystem are set to 0.
+
+.SH USAGE
+.PP 
+.B statfs_ext()
+requires you to allocate memory for the struct yourself. Typically this would be done like so:
+
+.in +4n
+.nf
+#include <libstatfsext.h>
+
+int main(void) {
+    struct statfs_ext *buf = malloc(sizeof(struct statfs_ext));
+    statfs_ext("/etc/issue", buf);
+
+    /* do stuff with struct */
+
+    free(buf);
+    return 0;
+}
+.fi
+.SH RETURN VALUE
+On success, zero is returned.
+On error, \-1 is returned, and
+.I errno
+is set appropriately.
+.SH ERRORS
+.TP
+.B EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+(See also
+.B path_resolution (7).)
+.TP
+.B ENAMETOOLONG
+.I path 
+is too long.
+.TP
+.B ENOENT
+The file referred to by
+.I path
+does not exist.
+.TP
+.B ENOMEM
+Insufficient kernel memory was available, call to 
+.B malloc() 
+or 
+.B realloc() 
+failed.
+.SH CONFORMING TO
+Linux-specific. Depends on reading 
+.B /proc/mounts.
+You wouldn't want to use this on BSD or OSX anyway, those versions were written by people much smarter than me. 
+.SH BUGS
+Probably lots. The author strongly prefers you report bugs by opening an issue at
+.B libstatfsext 
+github page: 
+.B https://github.com/DarrenKirby/libstatfsext/issues.
+If you prefer not, send an email to <bulliver@gmail.com>
+.SH SEE ALSO
+.B statfs (2),
+.B statvfs (2),
+.B path_resolution (7)
+It is worth reading 
+.B statfs (2)
+for the strange and curious tale of f_fsid. Long story short: ignore it.
+.B
+.SH AUTHOR
+Darren Kirby <bulliver@gmail.com>
+
