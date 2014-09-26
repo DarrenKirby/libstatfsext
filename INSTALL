@@ -1,0 +1,29 @@
+INSTALL directions for libstatfsext:
+
+After unpacking the tarball or pulling from git 'cd' into the top-level directory.
+
+From there you can type:
+
+$ make
+
+to build the library. Then type:
+
+$ sudo make install
+
+to install the library system-wide. The library is currently installed to /usr/lib,
+the header file to /usr/include, and the man pages to /usr/share/man/man3. I will
+work on adding an install prefix soon.
+
+Other make targets include:
+
+test - build the library and two small test programs
+
+strip - strips the library of debugging symbols
+
+debug - builds the library with debugging symbols
+
+uninstall - removes all installed files. Must be root or 'sudo'.
+
+clean - removes all object files and binaries from the source tree.
+
+
