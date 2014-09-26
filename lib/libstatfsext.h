@@ -23,7 +23,7 @@
 #ifndef _LIBSTATFSEXT_H
 #define _LIBSTATFSEXT_H
 
-#define LIBVERSION 1.0.0
+#define LIBVERSION 1.1.0
 
 #include <stdio.h>
 #include <sys/statfs.h>      /* for statfs struct */
@@ -31,6 +31,7 @@
 #include <errno.h>           /* for perror() */
 #include <stdlib.h>          /* for EXIT_FAILURE */
 #include <string.h>          /* for strncpy */
+#include <unistd.h>          /* for access() */
 
 
 #define FS_TYPE_LEN      90
@@ -70,27 +71,10 @@ struct statfs_ext {
     char f_mntfromname[PATH_MAX];    /* mounted file sytem */
 };
 
-/* used internally by statfs_ext() and getfsstat_linux() */
-int merge_statfs_structs(struct statfs *buf, struct statfs_ext **buf_full) {
-    int i;
-    (*buf_full)->f_type    = buf->f_type;
-    (*buf_full)->f_bsize   = buf->f_bsize;
-    (*buf_full)->f_blocks  = buf->f_blocks;
-    (*buf_full)->f_bfree   = buf->f_bfree;
-    (*buf_full)->f_bavail  = buf->f_bavail;
-    (*buf_full)->f_files   = buf->f_files;
-    (*buf_full)->f_ffree   = buf->f_ffree;
-    (*buf_full)->f_fsid    = buf->f_fsid;
-    (*buf_full)->f_namelen = buf->f_namelen;
-    (*buf_full)->f_frsize  = buf->f_frsize;
-
-    for (i = 0; i < 5; i++)
-        (*buf_full)->f_spare[i]   = buf->f_spare[i];
-    return 0;
-}
-
+/* function prototypes */
+extern char *getmntpt(char *path);
 extern int statfs_ext(const char *path, struct statfs_ext *buf);
-extern int getfsstat_linux(struct statfs_ext *buf, long int bufsize);
+extern int getfsstat_ext(struct statfs_ext *buf, long int bufsize, int flags);
 
 #endif /* _LIBSTATFSEXT_H */
 
