@@ -9,6 +9,8 @@ SRCHEAD = libstatfsext.h
 SRCOBJT = libstatfsext.o
 INSTDIR = /usr/lib
 INCLDIR = /usr/include
+LDOCDIR = doc
+DOCDIR = /usr/share/man/man3
 
 all: $(TARGET)
 
@@ -30,10 +32,14 @@ debug:
 install:
 	install -o root -g root -m 0755 $(SRCDIR)/$(TARGET) $(INSTDIR)/$(TARGET)
 	install -o root -g root -m 0644 $(SRCDIR)/$(SRCHEAD) $(INCLDIR)/$(SRCHEAD)
+	install -o root -g root -m 0644 $(LDOCDIR)/getfsstat_ext.3 $(DOCDIR)/getfsstat_ext.3
+	install -o root -g root -m 0644 $(LDOCDIR)/statfs_ext.3 $(DOCDIR)/statfs_ext.3
 
 uninstall:
 	-rm -rf $(INSTDIR)/$(TARGET)
 	-rm -rf $(INCLDIR)/$(SRCHEAD)
+	-rm -rf $(DOCDIR)/getfsstat_ext.3
+	-rm -rf $(DOCDIR)/statfs_ext.3
 
 clean:
 	-rm -rf $(SRCDIR)/libstatfsext.o
