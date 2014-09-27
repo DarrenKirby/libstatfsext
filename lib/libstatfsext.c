@@ -41,28 +41,28 @@ int __merge_statfs_structs(struct statfs *buf, struct statfs_ext **buf_full) {
 }
 
 /* used internally by statfs_ext() and getfsstat_ext() */
-int __read_proc_mounts(struct mounted_fs_entry *bf, char *path) {
+int __read_proc_mounts(struct mounted_fs_entry *mnt_fs_buf, char *path) {
     FILE *fp;
     if ((fp = fopen("/proc/mounts", "r")) == NULL) {
         errno = EIO;
         return -1;
     }
 
-    char lines[256];
-    char *line = lines;
+    char line_buf[256];
+    char *line_buf_p = line_buf;
     char *tok;
     char line_tmp[256];
-    char *line_tmp_p = line_tmp;
-    while (fgets (line, 256, fp) != NULL) {
-        if (strstr(line, "rootfs") != NULL)
+    char *line_tmp_p = line_tmp;   
+    while (fgets (line_buf_p, 256, fp) != NULL) {
+        if (strstr(line_buf_p, "rootfs") != NULL)
             continue;
-        strncpy(line_tmp_p, line, 256);
+        strncpy(line_tmp_p, line_buf_p, 256);     /* strtok() mutates the string... */
         tok = strtok(line_tmp_p, " ");
         tok = strtok(NULL, " ");
         if (strcmp(tok, path) == 0) {
-            sscanf(line, "%s %s %s %s %i %i\n", bf->fs_spec, bf->fs_file,
-                                        bf->fs_vsftype, bf->fs_mntops,
-                                        &bf->fs_freq, &bf->fs_passno);
+            sscanf(line_buf_p, "%s %s %s %s %i %i\n", mnt_fs_buf->fs_spec, mnt_fs_buf->fs_file,
+                                        mnt_fs_buf->fs_vsftype, mnt_fs_buf->fs_mntops,
+                                        &mnt_fs_buf->fs_freq, &mnt_fs_buf->fs_passno);
         } else {
             continue;
         }
@@ -71,7 +71,7 @@ int __read_proc_mounts(struct mounted_fs_entry *bf, char *path) {
     return 1; 
 }
 
-int statfs_ext(const char *path, struct statfs_ext *buf) {
+int statfs_ext(const char *path, struct statfs_ext *struct_buf) {
     /* check size of path arg */
     if (strlen(path) > PATH_MAX) {
         errno = ENAMETOOLONG;
@@ -105,32 +105,32 @@ int statfs_ext(const char *path, struct statfs_ext *buf) {
     pclose(pp);
     /* end crufty dirty hack */ 
     
-    struct mounted_fs_entry *mfe = malloc(sizeof(struct mounted_fs_entry));
-    if (buf == NULL) {
+    struct mounted_fs_entry *mnt_fs_struct = malloc(sizeof(struct mounted_fs_entry));
+    if (mnt_fs_struct == NULL) {
         errno = ENOMEM;
         return -1;
     }
     
-    struct statfs *tmp = malloc(sizeof(struct statfs));
-    if (buf == NULL) {
+    struct statfs *def_struct_tmp = malloc(sizeof(struct statfs));
+    if (def_struct_tmp == NULL) {
         errno = ENOMEM;
         return -1;
     }
     
-    __read_proc_mounts(mfe, mount_p);
-    statfs(mount_p, tmp);
-    __merge_statfs_structs(tmp, &buf);
+    __read_proc_mounts(mnt_fs_struct, mount_p);
+    statfs(mount_p, def_struct_tmp);
+    __merge_statfs_structs(def_struct_tmp, &struct_buf);
     
-    strncpy(buf->f_fstypename, mfe->fs_vsftype, FS_TYPE_LEN);      
-    strncpy(buf->f_mntonname, mfe->fs_file, PATH_MAX);
-    strncpy(buf->f_mntfromname, mfe->fs_spec, PATH_MAX);
+    strncpy(struct_buf->f_fstypename, mnt_fs_struct->fs_vsftype, FS_TYPE_LEN);      
+    strncpy(struct_buf->f_mntonname, mnt_fs_struct->fs_file, PATH_MAX);
+    strncpy(struct_buf->f_mntfromname, mnt_fs_struct->fs_spec, PATH_MAX);
    
-    free(mfe);
-    free(tmp);
+    free(mnt_fs_struct);
+    free(def_struct_tmp);
     return 0;
 }
 
-int getfsstat_ext(struct statfs_ext *buf, long int bufsize, int flags) {
+int getfsstat_ext(struct statfs_ext *struct_array_buf, long int bufsize, int flags) {
     /* make sure the bufsize is reasonable */
     if ((bufsize < FS_1) && (bufsize != FS_ALL)) {
         errno = EINVAL;
@@ -151,23 +151,23 @@ int getfsstat_ext(struct statfs_ext *buf, long int bufsize, int flags) {
             n_lines++;
     }
     
-    if (buf == NULL) {           /* We have # of mounted fs, might as well bail */ 
+    if (struct_array_buf == NULL) {           /* We have # of mounted fs, might as well bail */ 
         fclose(fp);
         return n_lines;
     }
     
     rewind(fp);
     
-    struct mounted_fs_entry bf[n_lines];
+    struct mounted_fs_entry mounted_fs_struct[n_lines];
     /* loop over lines and fill the struct */
     int i = 0;
-    char lines[256];
-    char *line = lines;
+    char line_buf[256];
+    char *line_buf_p = line_buf;
     for (; i < n_lines; i++) {
-        line = fgets(line, 512, fp);
-        sscanf(line, "%s %s %s %s %d %d\n", bf[i].fs_spec, bf[i].fs_file,
-                                            bf[i].fs_vsftype, bf[i].fs_mntops,
-                                            &bf[i].fs_freq, &bf[i].fs_passno);
+        line_buf_p = fgets(line_buf_p, 512, fp);
+        sscanf(line_buf_p, "%s %s %s %s %d %d\n", mounted_fs_struct[i].fs_spec, mounted_fs_struct[i].fs_file,
+                                            mounted_fs_struct[i].fs_vsftype, mounted_fs_struct[i].fs_mntops,
+                                            &mounted_fs_struct[i].fs_freq, &mounted_fs_struct[i].fs_passno);
     }
     fclose(fp);
     
@@ -178,47 +178,47 @@ int getfsstat_ext(struct statfs_ext *buf, long int bufsize, int flags) {
         n_lines = bufsize / FS_1;
     
     /* resize our array of structs */
-    buf = realloc(buf, sizeof(struct statfs_ext) * n_lines);
-    if (buf == NULL) {
+    struct_array_buf = realloc(struct_array_buf, sizeof(struct statfs_ext) * n_lines);
+    if (struct_array_buf == NULL) {
         errno = ENOMEM;
         return -1;
     }
 
-    struct statfs_ext *f_tmp;
-    f_tmp = malloc(sizeof(struct statfs_ext));
-    if (f_tmp == NULL) {
+    struct statfs_ext *ext_struct_tmp;
+    ext_struct_tmp = malloc(sizeof(struct statfs_ext));
+    if (ext_struct_tmp == NULL) {
         errno = ENOMEM;
         return -1;
     }
     
-    struct statfs *s_tmp;
-    s_tmp = malloc(sizeof(struct statfs));
-    if (s_tmp == NULL) {
+    struct statfs *def_struct_tmp;
+    def_struct_tmp = malloc(sizeof(struct statfs));
+    if (def_struct_tmp == NULL) {
         errno = ENOMEM;
         return -1;
     }
+    
+    i = 0;
+    for (; i < n_lines; i++) {
 
-    int ii = 0;
-    for (; ii < n_lines; ii++) {
-
-        if (statfs(bf[ii].fs_file, s_tmp) != 0) {
+        if (statfs(mounted_fs_struct[i].fs_file, def_struct_tmp) != 0) {
             if (n_lines == 1) {
                 errno = EIO;
                 return -1;
             }
             continue; /* might not be fatal */
         }
-        __merge_statfs_structs(s_tmp, &f_tmp);
+        __merge_statfs_structs(def_struct_tmp, &ext_struct_tmp);
 
-        strncpy(f_tmp->f_fstypename, bf[ii].fs_vsftype, FS_TYPE_LEN);      
-        strncpy(f_tmp->f_mntonname, bf[ii].fs_file, PATH_MAX);
-        strncpy(f_tmp->f_mntfromname, bf[ii].fs_spec, PATH_MAX);
+        strncpy(ext_struct_tmp->f_fstypename, mounted_fs_struct[i].fs_vsftype, FS_TYPE_LEN);      
+        strncpy(ext_struct_tmp->f_mntonname, mounted_fs_struct[i].fs_file, PATH_MAX);
+        strncpy(ext_struct_tmp->f_mntfromname, mounted_fs_struct[i].fs_spec, PATH_MAX);
 
-        buf[ii] = *f_tmp;
+        struct_array_buf[i] = *ext_struct_tmp;
     }
     
-    free(s_tmp);
-    free(f_tmp);
+    free(def_struct_tmp);
+    free(ext_struct_tmp);
     
     return n_lines; /* number of mounted filesystems  */
 }

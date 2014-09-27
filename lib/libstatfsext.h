@@ -70,7 +70,6 @@ struct statfs_ext {
     char f_mntfromname[PATH_MAX];    /* mounted file sytem */
 };
 
-// #define FS_1 8408
 #define FS_1 sizeof(struct statfs_ext)
 #define FS_2 (FS_1 * 2)
 #define FS_3 (FS_1 * 3)
@@ -95,8 +94,8 @@ struct statfs_ext {
 
 /* function prototypes */
 extern char *getmntpt(char *path);
-extern int statfs_ext(const char *path, struct statfs_ext *buf);
-extern int getfsstat_ext(struct statfs_ext *buf, long int bufsize, int flags);
+extern int statfs_ext(const char *path, struct statfs_ext *struct_buf);
+extern int getfsstat_ext(struct statfs_ext *struct_array_buf, long int bufsize, int flags);
 
 #endif /* _LIBSTATFSEXT_H */
 
