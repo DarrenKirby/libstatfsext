@@ -37,7 +37,7 @@ int __merge_statfs_structs(struct statfs *buf, struct statfs_ext **buf_full) {
     int i;
     for (i = 0; i < 5; i++)
         (*buf_full)->f_spare[i]   = buf->f_spare[i];
-    return 0;
+    return SUCCESS;
 }
 
 /* used internally by statfs_ext() and getfsstat_ext() */
@@ -45,7 +45,7 @@ int __read_proc_mounts(struct mounted_fs_entry *mnt_fs_buf, char *path) {
     FILE *fp;
     if ((fp = fopen("/proc/mounts", "r")) == NULL) {
         errno = EIO;
-        return -1;
+        return ERROR;
     }
 
     char line_buf[256];
@@ -68,53 +68,100 @@ int __read_proc_mounts(struct mounted_fs_entry *mnt_fs_buf, char *path) {
         }
     }
     fclose(fp);
-    return 1; 
+    return SUCCESS; 
+}
+
+int getmntpt(const char *path, char *mount_point) {
+    struct stat cur_stat;
+    struct stat last_stat;
+    
+    char dir_name[PATH_MAX];
+    char *dirname_p = dir_name;
+    char cur_cwd[255];
+    char *cur_cwd_p = cur_cwd;
+    char saved_cwd[PATH_MAX];
+    if (getcwd(saved_cwd, PATH_MAX) == NULL) {
+        errno = EIO;
+        return ERROR;
+    }
+    
+    if (lstat(path, &cur_stat) < 0) {
+        errno = EIO;
+        return ERROR;
+    }
+    
+    if (S_ISDIR (cur_stat.st_mode)) {
+        last_stat = cur_stat;
+        if (chdir("..") < 0)
+            return ERROR;
+        if (getcwd(cur_cwd_p, 255) == NULL) {
+            errno = EIO;
+            return ERROR;
+        }
+    } else { /* path is a file */
+        size_t path_len, suffix_len, dir_len;
+        path_len = strlen(path);
+        suffix_len = strlen(strrchr(path, 47)); /* 47 = '/' */
+        dir_len = path_len - suffix_len;
+        dirname_p = strncpy(dirname_p, path, dir_len);
+        if (chdir(dirname_p) < 0) 
+            return ERROR;
+        if (lstat(".", &last_stat) < 0)
+            return ERROR;
+    }
+    
+    for (;;) {
+        if (lstat("..", &cur_stat) < 0)
+            return ERROR;
+        if (cur_stat.st_dev != last_stat.st_dev || cur_stat.st_ino == last_stat.st_ino)
+            break; /* this is the mount point */
+        if (chdir("..") < 0)
+            return ERROR;
+        last_stat = cur_stat;
+    }
+
+    if (getcwd(mount_point, PATH_MAX) == NULL)
+        return ERROR;
+    if (chdir(saved_cwd) < 0)
+        return ERROR;
+    return SUCCESS;
 }
 
 int statfs_ext(const char *path, struct statfs_ext *struct_buf) {
     /* check size of path arg */
     if (strlen(path) > PATH_MAX) {
         errno = ENAMETOOLONG;
-        return -1;
+        return ERROR;
     }
     
     /* check if path exists */
     if (access(path, F_OK) != 0) {
         errno = ENOENT;
-        return -1;
+        return ERROR;
     }
     
     /* check if we have access to path */
     if (access(path, R_OK) != 0) {
         errno = EACCES;
-        return -1;
+        return ERROR;
     }
-    
-    /* this is a crufty dirty hack to find the mountpoint of 'path'
-     * it will be replaced by a pure-C solution (a la 'df') soon enough */
-    char command[PATH_MAX];
-    char *command_p = command;
+
     char mount_path[PATH_MAX];
     char *mount_p = mount_path;
-    char type[] = "r\0";
-    char *type_p = type;
-    FILE *pp;
-    sprintf(command_p, "df %s | awk 'NR==1 {next} {print $6; exit}'", path);
-    pp = popen(command_p, type_p);
-    mount_p = strtok(fgets(mount_p, PATH_MAX, pp), "\n");
-    pclose(pp);
-    /* end crufty dirty hack */ 
-    
+
+    if (getmntpt(path, mount_p) != 0)
+        return ERROR;
+
     struct mounted_fs_entry *mnt_fs_struct = malloc(sizeof(struct mounted_fs_entry));
     if (mnt_fs_struct == NULL) {
         errno = ENOMEM;
-        return -1;
+        return ERROR;
     }
     
     struct statfs *def_struct_tmp = malloc(sizeof(struct statfs));
     if (def_struct_tmp == NULL) {
         errno = ENOMEM;
-        return -1;
+        return ERROR;
     }
     
     __read_proc_mounts(mnt_fs_struct, mount_p);
@@ -127,20 +174,20 @@ int statfs_ext(const char *path, struct statfs_ext *struct_buf) {
    
     free(mnt_fs_struct);
     free(def_struct_tmp);
-    return 0;
+    return SUCCESS;
 }
 
 int getfsstat_ext(struct statfs_ext *struct_array_buf, long int bufsize, int flags) {
     /* make sure the bufsize is reasonable */
     if ((bufsize < FS_1) && (bufsize != FS_ALL)) {
         errno = EINVAL;
-        return -1;
+        return ERROR;
     }
 
     FILE *fp;
     if ((fp = fopen("/proc/mounts", "r")) == NULL) {
         errno = EIO;
-        return -1;
+        return ERROR;
     }
     
     char ch;
@@ -181,21 +228,21 @@ int getfsstat_ext(struct statfs_ext *struct_array_buf, long int bufsize, int fla
     struct_array_buf = realloc(struct_array_buf, sizeof(struct statfs_ext) * n_lines);
     if (struct_array_buf == NULL) {
         errno = ENOMEM;
-        return -1;
+        return ERROR;
     }
 
     struct statfs_ext *ext_struct_tmp;
     ext_struct_tmp = malloc(sizeof(struct statfs_ext));
     if (ext_struct_tmp == NULL) {
         errno = ENOMEM;
-        return -1;
+        return ERROR;
     }
     
     struct statfs *def_struct_tmp;
     def_struct_tmp = malloc(sizeof(struct statfs));
     if (def_struct_tmp == NULL) {
         errno = ENOMEM;
-        return -1;
+        return ERROR;
     }
     
     i = 0;
@@ -204,7 +251,7 @@ int getfsstat_ext(struct statfs_ext *struct_array_buf, long int bufsize, int fla
         if (statfs(mounted_fs_struct[i].fs_file, def_struct_tmp) != 0) {
             if (n_lines == 1) {
                 errno = EIO;
-                return -1;
+                return ERROR;
             }
             continue; /* might not be fatal */
         }
