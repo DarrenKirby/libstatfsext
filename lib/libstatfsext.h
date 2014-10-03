@@ -23,7 +23,7 @@
 #ifndef _LIBSTATFSEXT_H
 #define _LIBSTATFSEXT_H
 
-#define LIBVERSION 1.1.1
+#define LIBVERSION 1.1.2
 
 #include <stdio.h>
 #include <sys/statfs.h>      /* for statfs struct */
@@ -32,6 +32,11 @@
 #include <stdlib.h>          /* for EXIT_FAILURE */
 #include <string.h>          /* for strncpy */
 #include <unistd.h>          /* for access() */
+#include <sys/stat.h>        /* for stat   */
+#include <sys/types.h>       /*  "    "    */
+
+#define ERROR  -1
+#define SUCCESS 0 
 
 #define FS_TYPE_LEN      90
 #define MNT_FLAGS_LEN    256
@@ -93,7 +98,7 @@ struct statfs_ext {
 #define FS_ALL 0
 
 /* function prototypes */
-extern char *getmntpt(char *path);
+extern int getmntpt(const char *path, char *mount_point);
 extern int statfs_ext(const char *path, struct statfs_ext *struct_buf);
 extern int getfsstat_ext(struct statfs_ext *struct_array_buf, long int bufsize, int flags);
 
