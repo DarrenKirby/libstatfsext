@@ -1,5 +1,4 @@
 #include "libstatfsext.h"
-
 int main(void) {
     struct statfs_ext *buf = malloc(sizeof(struct statfs_ext));
     statfs_ext("/etc/issue", buf);
@@ -13,8 +12,6 @@ int main(void) {
     printf("\tfree blocks user: %d\n", (int)buf->f_bavail);
     printf("\ttotal nodes: %d\n", (int)buf->f_files);
     printf("\tfree nodes: %d\n\n", (int)buf->f_ffree);
-    
     free(buf);
     return 0;
 }
-
