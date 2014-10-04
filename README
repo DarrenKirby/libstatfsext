@@ -1,7 +1,7 @@
 README
 
 This here is a small and simple shared c library that implements two functions 
-inspired by the BSD libc:
+inspired by the BSD libc (and one other):
 
 1. statfs_ext()
 
@@ -12,6 +12,11 @@ has a few more useful fields added.
 
 This is an implementation of the BSD getfsstat() call, which returns an array 
 of statfs_ext structs, one for every mounted file system.
+
+and 3. getmntpt
+
+This function returns the mount point for the device or ramdisk or whatever for 
+any file or directory PATH that exists on a currently mounted FS..
 
 Please note that binary-compatibility may break often while the library is young
 as I flesh out the functions and lock down the public interface. I will be using
