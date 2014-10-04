@@ -1,0 +1,82 @@
+.\" Copyright (C) 2014 Darren Kirby (bulliver@gmail.com)
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.TH GETMNTPT 3 2014-09-26
+.SH NAME
+getmntpt \- return mount point for given PATH
+.SH SYNOPSIS
+.BR "#include <libstatfsext.h>
+.sp
+.BI "int getmntpt(const char *" path ", char *" mount_point ");
+.br
+.SH DESCRIPTION
+The function
+.BR getmntpt()
+will will return a pointer to a string which names the mount point for any given path. 
+The function takes two arguments:
+.I path
+is the relative or absolute pathname of any file, directory, or special device that is currently accessable.
+.I mount_point
+is a pointer to an empty string which should be of size PATH_MAX or at least 255 chars.
+
+
+.SH USAGE
+.PP 
+.in +4n
+.nf
+#include <libstatfsext.h>
+
+int main(void) {
+    char *path = "/var/log/messages";
+    char mount_point[PATH_MAX];
+    char *mount_p = mount_point;
+
+    if (getmntpt(path, mount_p) != 0)
+        return ERROR;
+
+    /* do stuff */
+
+    return 0;
+}
+.fi
+.SH RETURN VALUE
+On success, zero is returned.
+On error, \-1 is returned, and
+.I errno
+is set appropriately.
+.SH ERRORS
+.TP
+.B EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+(See also
+.B path_resolution (7).)
+.TP
+.B ENAMETOOLONG
+.I path 
+is too long.
+.TP
+.B ENOENT
+The file referred to by
+.I path
+does not exist.
+.SH CONFORMING TO
+Should work with any POSIX, but I have only tested on Linux, FreeBSD, and OS X. 
+.SH BUGS
+Probably lots. The author strongly prefers you report bugs by opening an issue at
+.B libstatfsext 
+github page: 
+.B https://github.com/DarrenKirby/libstatfsext/issues.
+If you prefer not, send an email to <bulliver@gmail.com>
+.SH AUTHOR
+Darren Kirby <bulliver@gmail.com>
+
