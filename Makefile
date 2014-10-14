@@ -1,10 +1,10 @@
-VERSION = 1.1.2
+VERSION = 1.2.0
 CC = cc
 CFLAGS = -Wall --std=gnu99
 LDFLAGS = -shared
 DBUGFLAGS = -ggdb3 -o0
 SRCDIR = lib
-TARGET = libstatfsext.so.$(VERSION)
+TARGET = libstatfsext.so
 SRCFILE = libstatfsext.c
 SRCHEAD = libstatfsext.h
 SRCOBJT = libstatfsext.o
@@ -37,16 +37,20 @@ debug:
 	$(CC) -L$(SRCDIR) $(CFLAGS) $(DBUGFLAGS) -o $(SRCDIR)/test3 $(SRCDIR)/test3.c -lstatfsext
 
 install:
-	install -o root -g root -m 0755 $(SRCDIR)/$(TARGET) $(PREFIX)/$(INSTDIR)/$(TARGET)
+	install -o root -g root -m 0755 $(SRCDIR)/$(TARGET) $(PREFIX)/$(INSTDIR)/$(TARGET).${VERSION}
+	ln -s $(PREFIX)/$(INSTDIR)/$(TARGET).${VERSION} $(PREFIX)/$(INSTDIR)/$(TARGET)
 	install -o root -g root -m 0644 $(SRCDIR)/$(SRCHEAD) $(PREFIX)/$(INCLDIR)/$(SRCHEAD)
 	install -o root -g root -m 0644 $(LDOCDIR)/getfsstat_ext.3 $(PREFIX)/$(DOCDIR)/getfsstat_ext.3
 	install -o root -g root -m 0644 $(LDOCDIR)/statfs_ext.3 $(PREFIX)/$(DOCDIR)/statfs_ext.3
+	install -o root -g root -m 0644 $(LDOCDIR)/getmntpt.3 $(PREFIX)/$(DOCDIR)/getmntpt.3
 
 uninstall:
 	-rm -f $(PREFIX)/$(INSTDIR)/$(TARGET)
+	-rm -f $(PREFIX)/$(INSTDIR)/$(TARGET).${VERSION}
 	-rm -f $(PREFIX)/$(INCLDIR)/$(SRCHEAD)
 	-rm -f $(PREFIX)/$(DOCDIR)/getfsstat_ext.3
 	-rm -f $(PREFIX)/$(DOCDIR)/statfs_ext.3
+	-rm -f $(PREFIX)/$(DOCDIR)/getmntpt.3
 
 clean:
 	-rm -f $(SRCDIR)/$(SRCOBJT)

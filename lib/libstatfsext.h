@@ -23,7 +23,7 @@
 #ifndef _LIBSTATFSEXT_H
 #define _LIBSTATFSEXT_H
 
-#define LIBVERSION 1.1.2
+#define LIBVERSION 1.2.0
 
 #include <stdio.h>
 #include <sys/statfs.h>      /* for statfs struct */
@@ -57,7 +57,7 @@ struct mounted_fs_entry {
 #endif
 
 struct statfs_ext {
-    __WORD_TYPE  f_type;             /* type of filesystem (see below) */
+    __WORD_TYPE  f_type;             /* type of filesystem */
     __WORD_TYPE  f_bsize;            /* optimal transfer block size */
     fsblkcnt_t   f_blocks;           /* total data blocks in filesystem */
     fsblkcnt_t   f_bfree;            /* free blocks in fs */

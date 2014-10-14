@@ -23,7 +23,7 @@ int main(void) {
         printf("\tfs type name: %s\n", buf[i].f_fstypename);
         printf("\tfs type: %#x\n", (unsigned int)buf[i].f_type);
         printf("\topt blk size: %i\n", (int)buf[i].f_bsize);
-        printf("\tblocks: %u\n", (int)buf[i].f_blocks);
+        printf("\tblocks: %d\n", (int)buf[i].f_blocks);
         printf("\tfree blocks: %d\n", (int)buf[i].f_bfree);
         printf("\tfree blocks user: %d\n", (int)buf[i].f_bavail);
         printf("\ttotal nodes: %d\n", (int)buf[i].f_files);

@@ -82,6 +82,7 @@ for information from a file system that is unable to respond."
 
 .SH USAGE
 .PP 
+As the size of the struct array is not known until runtime 
 .B getfsstat_ext()
 requires you to allocate memory for the initial struct yourself. Typically this would be done like so:
 
@@ -100,7 +101,7 @@ int main(void) {
 }
 .fi
 .PP
-Memory for the struct(s) will be reallocated as needed depending on size.
+Memory for the struct(s) will be reallocated as needed.
 .SH RETURN VALUE
 On success, the number of file system structs written to is returned.
 On error, \-1 is returned, and

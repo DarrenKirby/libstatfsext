@@ -152,17 +152,11 @@ int statfs_ext(const char *path, struct statfs_ext *struct_buf) {
     if (getmntpt(path, mount_p) != 0)
         return ERROR;
 
-    struct mounted_fs_entry *mnt_fs_struct = malloc(sizeof(struct mounted_fs_entry));
-    if (mnt_fs_struct == NULL) {
-        errno = ENOMEM;
-        return ERROR;
-    }
-    
-    struct statfs *def_struct_tmp = malloc(sizeof(struct statfs));
-    if (def_struct_tmp == NULL) {
-        errno = ENOMEM;
-        return ERROR;
-    }
+    struct mounted_fs_entry mnt_fs_struct_l = {};
+    struct mounted_fs_entry *mnt_fs_struct = &mnt_fs_struct_l;
+
+    struct statfs def_struct_tmp_l = {};
+    struct statfs *def_struct_tmp = &def_struct_tmp_l;
     
     __read_proc_mounts(mnt_fs_struct, mount_p);
     statfs(mount_p, def_struct_tmp);
@@ -171,9 +165,7 @@ int statfs_ext(const char *path, struct statfs_ext *struct_buf) {
     strncpy(struct_buf->f_fstypename, mnt_fs_struct->fs_vsftype, FS_TYPE_LEN);      
     strncpy(struct_buf->f_mntonname, mnt_fs_struct->fs_file, PATH_MAX);
     strncpy(struct_buf->f_mntfromname, mnt_fs_struct->fs_spec, PATH_MAX);
-   
-    free(mnt_fs_struct);
-    free(def_struct_tmp);
+
     return SUCCESS;
 }
 
@@ -231,19 +223,11 @@ int getfsstat_ext(struct statfs_ext *struct_array_buf, long int bufsize, int fla
         return ERROR;
     }
 
-    struct statfs_ext *ext_struct_tmp;
-    ext_struct_tmp = malloc(sizeof(struct statfs_ext));
-    if (ext_struct_tmp == NULL) {
-        errno = ENOMEM;
-        return ERROR;
-    }
-    
-    struct statfs *def_struct_tmp;
-    def_struct_tmp = malloc(sizeof(struct statfs));
-    if (def_struct_tmp == NULL) {
-        errno = ENOMEM;
-        return ERROR;
-    }
+    struct statfs_ext ext_struct_tmp_l = {};
+    struct statfs_ext *ext_struct_tmp = &ext_struct_tmp_l;
+
+    struct statfs def_struct_tmp_l = {};
+    struct statfs *def_struct_tmp = &def_struct_tmp_l;
     
     i = 0;
     for (; i < n_lines; i++) {
@@ -263,9 +247,6 @@ int getfsstat_ext(struct statfs_ext *struct_array_buf, long int bufsize, int fla
 
         struct_array_buf[i] = *ext_struct_tmp;
     }
-    
-    free(def_struct_tmp);
-    free(ext_struct_tmp);
     
     return n_lines; /* number of mounted filesystems  */
 }

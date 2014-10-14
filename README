@@ -13,7 +13,7 @@ has a few more useful fields added.
 This is an implementation of the BSD getfsstat() call, which returns an array 
 of statfs_ext structs, one for every mounted file system.
 
-and 3. getmntpt
+and 3. getmntpt()
 
 This function returns the mount point for the device or ramdisk or whatever for 
 any file or directory PATH that exists on a currently mounted FS..
