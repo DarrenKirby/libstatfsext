@@ -1,7 +1,7 @@
 /***************************************************************************
  *   libstatfsext.c - implements the BSD* function getfsstat() for Linux   *
  *                                                                         *
- *   Copyright (C) 2014 by Darren Kirby                                    *
+ *   Copyright (C) 2024 by Darren Kirby                                    *
  *   bulliver@gmail.com                                                    *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -23,53 +23,84 @@
 #include "libstatfsext.h"
 
 /* used internally by statfs_ext() and getfsstat_ext() */
-int __merge_statfs_structs(struct statfs *buf, struct statfs_ext **buf_full) {
-    (*buf_full)->f_type    = buf->f_type;
-    (*buf_full)->f_bsize   = buf->f_bsize;
-    (*buf_full)->f_blocks  = buf->f_blocks;
-    (*buf_full)->f_bfree   = buf->f_bfree;
-    (*buf_full)->f_bavail  = buf->f_bavail;
-    (*buf_full)->f_files   = buf->f_files;
-    (*buf_full)->f_ffree   = buf->f_ffree;
-    (*buf_full)->f_fsid    = buf->f_fsid;
-    (*buf_full)->f_namelen = buf->f_namelen;
-    (*buf_full)->f_frsize  = buf->f_frsize;
-    int i;
-    for (i = 0; i < 5; i++)
-        (*buf_full)->f_spare[i]   = buf->f_spare[i];
+int __merge_statfs_structs(struct statfs *buf, struct statfs_ext *buf_full) {
+    buf_full->f_type    = buf->f_type;
+    buf_full->f_bsize   = buf->f_bsize;
+    buf_full->f_blocks  = buf->f_blocks;
+    buf_full->f_bfree   = buf->f_bfree;
+    buf_full->f_bavail  = buf->f_bavail;
+    buf_full->f_files   = buf->f_files;
+    buf_full->f_ffree   = buf->f_ffree;
+    buf_full->f_fsid    = buf->f_fsid;
+    buf_full->f_namelen = buf->f_namelen;
+    buf_full->f_frsize  = buf->f_frsize;
+
+    for (int i = 0; i < 5; i++) {
+        buf_full->f_spare[i] = buf->f_spare[i];
+    }
+
     return SUCCESS;
 }
 
+
 /* used internally by statfs_ext() and getfsstat_ext() */
-int __read_proc_mounts(struct mounted_fs_entry *mnt_fs_buf, char *path) {
+int __read_proc_mounts(struct mounted_fs_entry *mnt_fs_buf, const char *path) {
     FILE *fp;
     if ((fp = fopen("/proc/mounts", "r")) == NULL) {
         errno = EIO;
         return ERROR;
     }
 
-    char line_buf[256];
+	memset(mnt_fs_buf, 0, sizeof(struct mounted_fs_entry));
+
+    char line_buf[512];
     char *line_buf_p = line_buf;
     char *tok;
-    char line_tmp[256];
-    char *line_tmp_p = line_tmp;   
-    while (fgets (line_buf_p, 256, fp) != NULL) {
-        if (strstr(line_buf_p, "rootfs") != NULL)
-            continue;
-        strncpy(line_tmp_p, line_buf_p, 256);     /* strtok() mutates the string... */
-        tok = strtok(line_tmp_p, " ");
+
+    while (fgets(line_buf_p, 512, fp) != NULL) {
+        if (strstr(line_buf_p, "rootfs") != NULL) {
+            continue;  // Skip rootfs
+        }
+
+        // Tokenize the line
+        tok = strtok(line_buf_p, " ");
+        if (tok == NULL) continue;
+        strncpy(mnt_fs_buf->fs_spec, tok, PATH_MAX - 1);
+
         tok = strtok(NULL, " ");
-        if (strcmp(tok, path) == 0) {
-            sscanf(line_buf_p, "%s %s %s %s %i %i\n", mnt_fs_buf->fs_spec, mnt_fs_buf->fs_file,
-                                        mnt_fs_buf->fs_vsftype, mnt_fs_buf->fs_mntops,
-                                        &mnt_fs_buf->fs_freq, &mnt_fs_buf->fs_passno);
-        } else {
-            continue;
+        if (tok == NULL) continue;
+        strncpy(mnt_fs_buf->fs_file, tok, PATH_MAX - 1);
+
+        tok = strtok(NULL, " ");
+        if (tok == NULL) continue;
+        strncpy(mnt_fs_buf->fs_vsftype, tok, FS_TYPE_LEN - 1);
+
+        tok = strtok(NULL, " ");
+        if (tok == NULL) continue;
+        strncpy(mnt_fs_buf->fs_mntops, tok, MNT_FLAGS_LEN - 1);
+
+        // We can use sscanf for the two integers at the end
+        tok = strtok(NULL, " ");
+        if (tok != NULL) {
+            sscanf(tok, "%i", &mnt_fs_buf->fs_freq);
+        }
+
+        tok = strtok(NULL, " ");
+        if (tok != NULL) {
+            sscanf(tok, "%i", &mnt_fs_buf->fs_passno);
+        }
+
+        // Check if the mount point matches the desired path
+        if (strcmp(mnt_fs_buf->fs_file, path) == 0) {
+            fclose(fp);
+            return SUCCESS;  // We found the matching entry
         }
     }
+
     fclose(fp);
-    return SUCCESS; 
+    return ERROR;  // No matching mount point found
 }
+
 
 int getmntpt(const char *path, char *mount_point) {
     struct stat cur_stat;
@@ -127,6 +158,7 @@ int getmntpt(const char *path, char *mount_point) {
     return SUCCESS;
 }
 
+
 int statfs_ext(const char *path, struct statfs_ext *struct_buf) {
     /* check size of path arg */
     if (strlen(path) > PATH_MAX) {
@@ -152,24 +184,28 @@ int statfs_ext(const char *path, struct statfs_ext *struct_buf) {
     if (getmntpt(path, mount_p) != 0)
         return ERROR;
 
-    struct mounted_fs_entry mnt_fs_struct_l = {};
-    struct mounted_fs_entry *mnt_fs_struct = &mnt_fs_struct_l;
+    struct mounted_fs_entry mnt_fs_struct = {};
+    struct statfs def_struct_tmp = {};
+    
+    __read_proc_mounts(&mnt_fs_struct, mount_p);
+    
+    if (statfs(mount_p, &def_struct_tmp) != 0)
+		perror("statfs failed");
 
-    struct statfs def_struct_tmp_l = {};
-    struct statfs *def_struct_tmp = &def_struct_tmp_l;
+    __merge_statfs_structs(&def_struct_tmp, struct_buf);
     
-    __read_proc_mounts(mnt_fs_struct, mount_p);
-    statfs(mount_p, def_struct_tmp);
-    __merge_statfs_structs(def_struct_tmp, &struct_buf);
+    strncpy(struct_buf->f_fstypename, mnt_fs_struct.fs_vsftype, FS_TYPE_LEN);      
+    strncpy(struct_buf->f_mntonname, mnt_fs_struct.fs_file, PATH_MAX);
+    strncpy(struct_buf->f_mntfromname, mnt_fs_struct.fs_spec, PATH_MAX);
     
-    strncpy(struct_buf->f_fstypename, mnt_fs_struct->fs_vsftype, FS_TYPE_LEN);      
-    strncpy(struct_buf->f_mntonname, mnt_fs_struct->fs_file, PATH_MAX);
-    strncpy(struct_buf->f_mntfromname, mnt_fs_struct->fs_spec, PATH_MAX);
+    struct_buf->f_fstypename[FS_TYPE_LEN - 1] = '\0';
+	struct_buf->f_mntonname[PATH_MAX - 1] = '\0';
+	struct_buf->f_mntfromname[PATH_MAX - 1] = '\0';
 
     return SUCCESS;
 }
 
-int getfsstat_ext(struct statfs_ext *struct_array_buf, long int bufsize, int flags) {
+int getfsstat_ext(struct statfs_ext **struct_array_buf, long int bufsize, int flags) {
     /* make sure the bufsize is reasonable */
     if ((bufsize < FS_1) && (bufsize != FS_ALL)) {
         errno = EINVAL;
@@ -183,70 +219,85 @@ int getfsstat_ext(struct statfs_ext *struct_array_buf, long int bufsize, int fla
     }
     
     char ch;
-    int  n_lines = 0;
-    while(!feof(fp)) {             /* count lines to determine */
-        ch = fgetc(fp);            /* size of struct array     */
-        if(ch == '\n') 
+    int n_lines = 0;
+    while (!feof(fp)) {         /* count lines to determine */
+        ch = fgetc(fp);         /* size of struct array     */
+        if (ch == '\n') 
             n_lines++;
     }
-    
-    if (struct_array_buf == NULL) {           /* We have # of mounted fs, might as well bail */ 
+
+    if (n_lines <= 0) {
+        fclose(fp);
+        errno = EIO;
+        return ERROR;
+    }
+
+    /* If the buffer size is FS_ALL, the user
+     * only wants the number of mounts */
+    if (bufsize == FS_ALL) {
         fclose(fp);
         return n_lines;
     }
-    
-    rewind(fp);
-    
-    struct mounted_fs_entry mounted_fs_struct[n_lines];
-    /* loop over lines and fill the struct */
-    int i = 0;
-    char line_buf[256];
-    char *line_buf_p = line_buf;
-    for (; i < n_lines; i++) {
-        line_buf_p = fgets(line_buf_p, 512, fp);
-        sscanf(line_buf_p, "%s %s %s %s %d %d\n", mounted_fs_struct[i].fs_spec, mounted_fs_struct[i].fs_file,
-                                            mounted_fs_struct[i].fs_vsftype, mounted_fs_struct[i].fs_mntops,
-                                            &mounted_fs_struct[i].fs_freq, &mounted_fs_struct[i].fs_passno);
-    }
-    fclose(fp);
-    
-    /* How many structs to return? */
-    if (bufsize == FS_ALL)
-        ;
-    else
-        n_lines = bufsize / FS_1;
-    
-    /* resize our array of structs */
-    struct_array_buf = realloc(struct_array_buf, sizeof(struct statfs_ext) * n_lines);
-    if (struct_array_buf == NULL) {
+
+    /* Otherwise, allocate memory for the number 
+     * of mounted filesystems */
+    *struct_array_buf = malloc(FS_1 * n_lines);
+    if (*struct_array_buf == NULL) {
         errno = ENOMEM;
         return ERROR;
     }
 
-    struct statfs_ext ext_struct_tmp_l = {};
-    struct statfs_ext *ext_struct_tmp = &ext_struct_tmp_l;
-
-    struct statfs def_struct_tmp_l = {};
-    struct statfs *def_struct_tmp = &def_struct_tmp_l;
+    rewind(fp);
     
-    i = 0;
+    struct mounted_fs_entry mounted_fs_struct[n_lines];
+    int i = 0;
+    char line_buf[256];
+    char *line_buf_p = line_buf;
     for (; i < n_lines; i++) {
+        line_buf_p = fgets(line_buf_p, sizeof(line_buf), fp);
 
-        if (statfs(mounted_fs_struct[i].fs_file, def_struct_tmp) != 0) {
-            if (n_lines == 1) {
-                errno = EIO;
-                return ERROR;
-            }
-            continue; /* might not be fatal */
+        int parsed_fields = sscanf(line_buf_p, "%s %s %s %s %d %d\n", 
+            mounted_fs_struct[i].fs_spec, mounted_fs_struct[i].fs_file,
+            mounted_fs_struct[i].fs_vsftype, mounted_fs_struct[i].fs_mntops,
+            &mounted_fs_struct[i].fs_freq, &mounted_fs_struct[i].fs_passno);
+
+        if (parsed_fields < 6) {
+            fprintf(stderr, "Error parsing line: %s\n", line_buf_p);
+            continue;
         }
-        __merge_statfs_structs(def_struct_tmp, &ext_struct_tmp);
+    }
+    fclose(fp);
 
-        strncpy(ext_struct_tmp->f_fstypename, mounted_fs_struct[i].fs_vsftype, FS_TYPE_LEN);      
-        strncpy(ext_struct_tmp->f_mntonname, mounted_fs_struct[i].fs_file, PATH_MAX);
-        strncpy(ext_struct_tmp->f_mntfromname, mounted_fs_struct[i].fs_spec, PATH_MAX);
+    struct statfs_ext tmp_buf = {};
 
-        struct_array_buf[i] = *ext_struct_tmp;
+    for (i = 0; i < n_lines; i++) {
+		
+        if (statfs_ext(mounted_fs_struct[i].fs_file, &tmp_buf) != SUCCESS) {
+            /* If statfs_ext fails, set default values */
+            tmp_buf.f_type = 0;
+            tmp_buf.f_bsize = 0;
+            tmp_buf.f_blocks = 0;
+            tmp_buf.f_bfree = 0;
+            tmp_buf.f_bavail = 0;
+            tmp_buf.f_files = 0;
+            tmp_buf.f_ffree = 0;
+            memset(&tmp_buf.f_fsid, 0, sizeof(tmp_buf.f_fsid));  // Set fsid to 0
+            tmp_buf.f_namelen = 0;
+            tmp_buf.f_frsize = 0;
+            for (int j = 0; j < 5; j++) {
+                tmp_buf.f_spare[j] = 0;
+            }
+        }
+
+        /* Copy the known good values from mounted_fs_struct */
+        strncpy(tmp_buf.f_fstypename, mounted_fs_struct[i].fs_vsftype, FS_TYPE_LEN - 1);
+        strncpy(tmp_buf.f_mntonname, mounted_fs_struct[i].fs_file, PATH_MAX - 1);
+        strncpy(tmp_buf.f_mntfromname, mounted_fs_struct[i].fs_spec, PATH_MAX - 1);
+
+        /* Copy the result from tmp_buf into the array */
+        (*struct_array_buf)[i] = tmp_buf;
     }
     
-    return n_lines; /* number of mounted filesystems  */
+    return n_lines; /* number of mounted filesystems */
 }
+
