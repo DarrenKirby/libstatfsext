@@ -10,17 +10,21 @@ to build the library. Then type:
 
 $ sudo make install
 
-to install the library system-wide. The library is currently installed to /usr/lib,
-the header file to /usr/include, and the man pages to /usr/share/man/man3. I will
-work on adding an install prefix soon.
+to install the library system-wide. The library is currently installed
+to /usr/lib, the header file to /usr/include, and the man pages to 
+/usr/share/man/man3. You can edit the PREFIX variable in the make file
+to install the package to a place of your choice.
 
 Other make targets include:
 
-test - build the library and two small test programs
+test - build the library and three small test programs
 
 strip - strips the library of debugging symbols
 
-debug - builds the library with debugging symbols
+debug - builds the library with debugging symbols. This also passes
+		-rpath='./lib' to the linker, so you can play with the code
+		directly fromm the install directory, rather than having to 
+		install it to the system.
 
 uninstall - removes all installed files. Must be root or 'sudo'.
 
