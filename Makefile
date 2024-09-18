@@ -1,8 +1,9 @@
-VERSION = 1.2.0
+VERSION = 2.0.0
 CC = cc
-CFLAGS = -Wall --std=gnu99
+CFLAGS = -Wall --std=gnu11
 LDFLAGS = -shared
-DBUGFLAGS = -ggdb3 -o0
+DBUGFLAGS = -ggdb3 -o0 
+DBUGBINFLAGS = -Wl,-rpath='./lib'
 SRCDIR = lib
 TARGET = libstatfsext.so
 SRCFILE = libstatfsext.c
@@ -32,9 +33,9 @@ strip:
 debug:
 	$(CC) -c $(CFLAGS) $(DBUGFLAGS) -o $(SRCDIR)/$(SRCOBJT) -fpic $(SRCDIR)/$(SRCFILE)
 	$(CC) $(LDFLAGS) $(DBUGFLAGS) -o $(SRCDIR)/$(TARGET) $(SRCDIR)/$(SRCOBJT)
-	$(CC) -L$(SRCDIR) $(CFLAGS) $(DBUGFLAGS) -o $(SRCDIR)/test $(SRCDIR)/test.c -lstatfsext
-	$(CC) -L$(SRCDIR) $(CFLAGS) $(DBUGFLAGS) -o $(SRCDIR)/test2 $(SRCDIR)/test2.c -lstatfsext
-	$(CC) -L$(SRCDIR) $(CFLAGS) $(DBUGFLAGS) -o $(SRCDIR)/test3 $(SRCDIR)/test3.c -lstatfsext
+	$(CC) -L$(SRCDIR) $(CFLAGS) $(DBUGFLAGS) $(DBUGBINFLAGS) -o $(SRCDIR)/test $(SRCDIR)/test.c -lstatfsext
+	$(CC) -L$(SRCDIR) $(CFLAGS) $(DBUGFLAGS) $(DBUGBINFLAGS) -o $(SRCDIR)/test2 $(SRCDIR)/test2.c -lstatfsext
+	$(CC) -L$(SRCDIR) $(CFLAGS) $(DBUGFLAGS) $(DBUGBINFLAGS) -o $(SRCDIR)/test3 $(SRCDIR)/test3.c -lstatfsext
 
 install:
 	install -o root -g root -m 0755 $(SRCDIR)/$(TARGET) $(PREFIX)/$(INSTDIR)/$(TARGET).${VERSION}
