@@ -1,27 +1,34 @@
 README
 
-This here is a small and simple shared c library that implements two functions 
-inspired by the BSD libc (and one other):
+This here is a small and simple shared c library that implements two
+functions inspired by the BSD libc (and one other):
 
 1. statfs_ext()
 
-This is the same as the standard linux statfs() call except the struct returned 
-has a few more useful fields added.
+This is the same as the standard linux statfs() call except the struct 
+returned has a few more useful fields added, namely, strings containing
+the filesystem type, the mount point, and the device file (if a block
+device) else just another representation of the type. These are the 
+values gleaned from the first three fields in entries from 
+/proc/mounts. 
 
 2. getfsstat_linux()
 
-This is an implementation of the BSD getfsstat() call, which returns an array 
-of statfs_ext structs, one for every mounted file system.
+This is an implementation of the BSD getfsstat() call, which returns an 
+array of statfs_ext structs, one for every mounted file system.
 
 and 3. getmntpt()
 
-This function returns the mount point for the device or ramdisk or whatever for 
-any file or directory PATH that exists on a currently mounted FS..
+This function returns the mount point for the device or ramdisk or 
+whatever for any file or directory PATH that exists on a currently 
+mounted FS..
 
-Please note that binary-compatibility may break often while the library is young
-as I flesh out the functions and lock down the public interface. I will be using
-semantic numbering (ie: 1.a.b), so 'b' version bumps will be backwards compatible,
-while 'a' version bumps may not be.
+Please note that binary-compatibility may break often while the library
+is young as I flesh out the functions and lock down the public interface.
+I will be using semantic numbering (ie: 1.a.b), so 'b' version bumps
+will be backwards compatible, while 'a' version bumps may not be.
+
+I expect I will change this to use statvfs() soon enough.
 
 Author: Darren Kirby
 Bugs: Please open an issue here [0] or send an email to bulliver@gmail.com
