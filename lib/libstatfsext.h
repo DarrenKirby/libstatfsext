@@ -1,7 +1,7 @@
 /***************************************************************************
  *   libstatfsext.h - implements the BSD* function getfsstat() for Linux   *
  *                                                                         *
- *   Copyright (C) 2014 by Darren Kirby                                    *
+ *   Copyright (C) 2024 by Darren Kirby                                    *
  *   bulliver@gmail.com                                                    *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -23,7 +23,7 @@
 #ifndef _LIBSTATFSEXT_H
 #define _LIBSTATFSEXT_H
 
-#define LIBVERSION 1.2.0
+#define LIBVERSION 2.0.0
 
 #include <stdio.h>
 #include <sys/statfs.h>      /* for statfs struct */
@@ -76,31 +76,12 @@ struct statfs_ext {
 };
 
 #define FS_1 sizeof(struct statfs_ext)
-#define FS_2 (FS_1 * 2)
-#define FS_3 (FS_1 * 3)
-#define FS_4 (FS_1 * 4)
-#define FS_5 (FS_1 * 5)
-#define FS_6 (FS_1 * 6)
-#define FS_7 (FS_1 * 7)
-#define FS_8 (FS_1 * 8)
-#define FS_9 (FS_1 * 9)
-#define FS_10 (FS_1 * 10)
-#define FS_11 (FS_1 * 11)
-#define FS_12 (FS_1 * 12)
-#define FS_13 (FS_1 * 13)
-#define FS_14 (FS_1 * 14)
-#define FS_15 (FS_1 * 15)
-#define FS_16 (FS_1 * 16)
-#define FS_17 (FS_1 * 17)
-#define FS_18 (FS_1 * 18)
-#define FS_19 (FS_1 * 19)
-#define FS_20 (FS_1 * 20)
 #define FS_ALL 0
 
 /* function prototypes */
 extern int getmntpt(const char *path, char *mount_point);
 extern int statfs_ext(const char *path, struct statfs_ext *struct_buf);
-extern int getfsstat_ext(struct statfs_ext *struct_array_buf, long int bufsize, int flags);
+extern int getfsstat_ext(struct statfs_ext **struct_array_buf, long int bufsize, int flags);
 
 #endif /* _LIBSTATFSEXT_H */
 
