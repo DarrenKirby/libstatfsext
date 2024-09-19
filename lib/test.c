@@ -1,21 +1,21 @@
 #include "libstatfsext.h"
 
 int main(void) {
-    int n_mounts = 0;
+    int n_mounts;
     struct statfs_ext *buf = NULL;
-
     /* First call: Get the number of mounted filesystems */
-    n_mounts = getfsstat_ext(&buf, FS_ALL, 0);
+    n_mounts = getfsstat_ext(&buf, FS_NUM, 0);
     if (n_mounts == -1) {
+		perror("getfsstat_ext: 1st call");
         printf("ERRNO: %i\n", errno);
         exit(EXIT_FAILURE);
     }
 
     printf("Found %i mounted file systems.\n\n", n_mounts);
-
     /* Second call: Allocate buffer and get the filesystem data */
-    n_mounts = getfsstat_ext(&buf, n_mounts * sizeof(struct statfs_ext), 0);
+    n_mounts = getfsstat_ext(&buf, FS_ALL, 0);
     if (n_mounts == -1) {
+		perror("getfsstat_ext: 2nd call");
         printf("ERRNO: %i\n", errno);
         exit(EXIT_FAILURE);
     }
