@@ -206,11 +206,6 @@ int statfs_ext(const char *path, struct statfs_ext *struct_buf) {
 }
 
 int getfsstat_ext(struct statfs_ext **struct_array_buf, long int bufsize, int flags) {
-    /* make sure the bufsize is reasonable */
-    if ((bufsize < FS_1) && (bufsize != FS_ALL)) {
-        errno = EINVAL;
-        return ERROR;
-    }
 
     FILE *fp;
     if ((fp = fopen("/proc/mounts", "r")) == NULL) {
@@ -219,29 +214,36 @@ int getfsstat_ext(struct statfs_ext **struct_array_buf, long int bufsize, int fl
     }
     
     char ch;
-    int n_lines = 0;
+    int n_mounts = 0;
     while (!feof(fp)) {         /* count lines to determine */
         ch = fgetc(fp);         /* size of struct array     */
         if (ch == '\n') 
-            n_lines++;
+            n_mounts++;
     }
 
-    if (n_lines <= 0) {
+    if (n_mounts <= 0) {
         fclose(fp);
         errno = EIO;
         return ERROR;
     }
 
-    /* If the buffer size is FS_ALL, the user
+    /* If the buffer size is FS_NUM, the user
      * only wants the number of mounts */
-    if (bufsize == FS_ALL) {
+    if (bufsize == FS_NUM) {
         fclose(fp);
-        return n_lines;
+        return n_mounts;
     }
 
     /* Otherwise, allocate memory for the number 
-     * of mounted filesystems */
-    *struct_array_buf = malloc(FS_1 * n_lines);
+     * of requested mounted filesystems */
+    int n_lines;
+    if (bufsize == FS_ALL) {
+		n_lines = n_mounts;
+		*struct_array_buf = malloc(FS_1 * n_lines);
+	} else {
+		n_lines = bufsize / STATFS_EXT_SIZE;
+		*struct_array_buf = malloc(bufsize);
+	}
     if (*struct_array_buf == NULL) {
         errno = ENOMEM;
         return ERROR;
