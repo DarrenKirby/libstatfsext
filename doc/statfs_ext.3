@@ -1,4 +1,4 @@
-.\" Copyright (C) 2014 Darren Kirby (bulliver@gmail.com)
+.\" Copyright (C) 2024 Darren Kirby (bulliver@gmail.com)
 .\"
 .\" %%%LICENSE_START(VERBATIM)
 .\" Permission is granted to make and distribute verbatim copies of this
@@ -10,7 +10,7 @@
 .\" entire resulting derived work is distributed under the terms of a
 .\" permission notice identical to this one.
 .\"
-.TH STATFS_EXT 3 2014-09-26
+.TH STATFS_EXT 3 2024-09-19
 .SH NAME
 statfs_ext \- get extended filesystem statistics
 .SH SYNOPSIS
@@ -35,9 +35,9 @@ structure defined as follows:
 .in +4n
 .nf
 #if __WORDSIZE == 32		/* System word size */
-# define __WORD_TYPE           int
-#else /* __WORDSIZE == 64 */
-# define __WORD_TYPE		long int
+# define __WORD_TYPE int
+#else                         /* __WORDSIZE == 64 */
+# define __WORD_TYPE long int
 #endif
 
 struct statfs_ext {
@@ -70,9 +70,8 @@ Fields that are undefined for a particular filesystem are set to 0.
 #include <libstatfsext.h>
 
 int main(void) {
-    struct statfs_ext buf_l = {};      /* initialize an empty statfs_ext struct */
-    struct statfs_ext *buf = &buf_l;   /* declare a pointer to it */
-    statfs_ext("/etc/issue", buf);
+    struct statfs_ext buf = {};      /* initialize an empty statfs_ext struct */
+    statfs_ext("/etc/issue", &buf);  /* pass a pointer to it */
 
     /* do stuff with struct */
 

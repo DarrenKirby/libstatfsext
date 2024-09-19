@@ -1,4 +1,4 @@
-.\" Copyright (C) 2014 Darren Kirby (bulliver@gmail.com)
+.\" Copyright (C) 2024 Darren Kirby (bulliver@gmail.com)
 .\"
 .\" %%%LICENSE_START(VERBATIM)
 .\" Permission is granted to make and distribute verbatim copies of this
@@ -10,7 +10,7 @@
 .\" entire resulting derived work is distributed under the terms of a
 .\" permission notice identical to this one.
 .\"
-.TH GETFSSTAT_EXT 3 2014-09-26
+.TH GETFSSTAT_EXT 3 2024-09-19
 .SH NAME
 getfsstat_ext \- get a list of all mounted file systems
 .SH SYNOPSIS
@@ -61,14 +61,9 @@ in the order they are listed. Passing
 will return structs for all currently mounted file systems. You can pass any arbitrary integer to 
 .I bufsize
 but behaviour is unspecified and odd things may result. If you choose to do this it would be wise to pass an integer that is a multiple of 
-.B sizeof(struct statfs_ext). 
-
-.PP
-If 
-.I buf 
-is given as NULL, 
-.B getfsstat_ext() 
-returns just the number of mounted file systems.
+.B sizeof(struct statfs_ext). There is also a constant
+.B FS_NUM 
+defined, which if passed to bufsize, will simply return the number of mounted filesystems found, without returning any structs.
 
 .PP
 .I flags
@@ -84,15 +79,16 @@ for information from a file system that is unable to respond."
 .PP 
 As the size of the struct array is not known until runtime 
 .B getfsstat_ext()
-requires you to allocate memory for the initial struct yourself. Typically this would be done like so:
+will internally allocate memory for it. The caller is responsible for freeing this memory. 
+Typically this would be done like so:
 
 .in +4n
 .nf
 #include <libstatfsext.h>
 
 int main(void) {
-    struct statfs_ext *buf = malloc(sizeof(struct statfs_ext));
-    getfsstat_ext(buf, FS_ALL, 0);
+    struct statfs_ext *buf = NULL;
+    getfsstat_ext(&buf, FS_ALL, 0);
 
     /* do stuff with struct */
 
@@ -101,9 +97,10 @@ int main(void) {
 }
 .fi
 .PP
-Memory for the struct(s) will be reallocated as needed.
+Memory for the struct(s) will be allocated as needed.
 .SH RETURN VALUE
-On success, the number of file system structs written to is returned.
+On success, the number of mounted filesystems found is returned, no matter
+how many structs were asked for. 
 On error, \-1 is returned, and
 .I errno
 is set appropriately.
@@ -128,8 +125,6 @@ does not exist.
 .B ENOMEM
 Insufficient kernel memory was available, call to 
 .B malloc() 
-or 
-.B realloc() 
 failed.
 .SH CONFORMING TO
 Linux-specific. Depends on reading 

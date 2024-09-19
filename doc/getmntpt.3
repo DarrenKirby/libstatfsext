@@ -1,4 +1,4 @@
-.\" Copyright (C) 2014 Darren Kirby (bulliver@gmail.com)
+.\" Copyright (C) 2024 Darren Kirby (bulliver@gmail.com)
 .\"
 .\" %%%LICENSE_START(VERBATIM)
 .\" Permission is granted to make and distribute verbatim copies of this
@@ -10,7 +10,7 @@
 .\" entire resulting derived work is distributed under the terms of a
 .\" permission notice identical to this one.
 .\"
-.TH GETMNTPT 3 2014-09-26
+.TH GETMNTPT 3 2024-09-19
 .SH NAME
 getmntpt \- return mount point for given PATH
 .SH SYNOPSIS
@@ -24,9 +24,9 @@ The function
 will will return a pointer to a string which names the mount point for any given path. 
 The function takes two arguments:
 .I path
-is the relative or absolute pathname of any file, directory, or special device that is currently accessable.
+is the relative or absolute pathname of any file, directory, or special device that is currently accessible.
 .I mount_point
-is a pointer to an empty string which should be of size PATH_MAX or at least 255 chars.
+is a pointer to an empty string which should be of size PATH_MAX or at least 256 bytes.
 
 
 .SH USAGE
@@ -62,15 +62,14 @@ Search permission is denied for a component of the path prefix of
 .B path_resolution (7).)
 .TP
 .B ENAMETOOLONG
-.I path 
-is too long.
+path is too long.
 .TP
 .B ENOENT
 The file referred to by
 .I path
 does not exist.
 .SH CONFORMING TO
-Should work with any POSIX, but I have only tested on Linux, FreeBSD, and OS X. 
+Should work with any POSIX or POSIX-like, but I have only tested on Linux, FreeBSD, and OS X. 
 .SH BUGS
 Probably lots. The author strongly prefers you report bugs by opening an issue at
 .B libstatfsext 
